@@ -1,14 +1,14 @@
 #pragma once
 #include <cstdint>
 #include <cstring>
-#include <algorithm>
 #include <string>
+#include <algorithm>
 #include <iostream>
 
 
-
 struct BigInt {
-    uint32_t d[LIMBS] = {};
+    uint32_t d[LIMBS];
+    bool neg = false;
 
     BigInt() { memset(d, 0, sizeof(d)); }
 
@@ -47,7 +47,7 @@ struct BigInt {
         for (int i = 0; i < LIMBS; i++) {
             int64_t diff = (int64_t)d[i] - o.d[i] - borrow;
             if (diff < 0) { diff += (int64_t)1 << 32; borrow = 1; } else borrow = 0;
-            r.d[i] = (uint32_t)(uint64_t)diff;
+            r.d[i] = (uint32_t)diff;
         }
         return r;
     }
@@ -79,7 +79,6 @@ struct BigInt {
         return true;
     }
 
-
     std::string str() const {
         uint32_t tmp[LIMBS];
         memcpy(tmp, d, sizeof(d));
@@ -108,7 +107,15 @@ struct BigInt {
 
 inline std::ostream& operator<<(std::ostream& os, const BigInt& b) { return os << b.str(); }
 
-inline BigInt ext_gcd_inv(const BigInt& a, const BigInt& /*mod*/) {
+inline BigInt mod_pow2(const BigInt& a, int) { return a; }
+
+inline BigInt pow2(int exp) {
+    BigInt r;
+    r.d[exp/32] = (1u << (exp%32));
+    return r;
+}
+
+inline BigInt ext_gcd_inv(const BigInt& a, const BigInt&) {
     BigInt x(1ULL);
     BigInt two(2ULL);
     for (int i = 0; i < 15; i++)
@@ -116,26 +123,31 @@ inline BigInt ext_gcd_inv(const BigInt& a, const BigInt& /*mod*/) {
     return x;
 }
 
+inline BigInt divby_small(const BigInt& a, uint32_t b) {
+    BigInt q;
+    uint64_t rem = 0;
+    for (int i = LIMBS - 1; i >= 0; i--) {
+        uint64_t cur = (rem << 32) | a.d[i];
+        q.d[i] = (uint32_t)(cur / b);
+        rem    = cur % b;
+    }
+    return q;
+}
+
+inline BigInt operator/(const BigInt& a, uint32_t b) { return divby_small(a, b); }
+
 inline BigInt parse36(const std::string& s) {
     BigInt result(0ULL);
     BigInt b36(36ULL);
     for (char ch : s) {
         result = result * b36;
-        if (ch >= '0' && ch <= '9') result = result + BigInt((uint64_t)(ch - '0'));
+        if      (ch >= '0' && ch <= '9') result = result + BigInt((uint64_t)(ch - '0'));
         else if (ch >= 'a' && ch <= 'z') result = result + BigInt((uint64_t)(ch - 'a' + 10));
     }
     return result;
 }
 
-inline BigInt pow2(int exp) {
-    BigInt r(0ULL);
-    r.d[exp/32] = (1u << (exp%32));
-    return r;
-}
-
-inline BigInt mod_pow2(const BigInt& a, int) { return a; }
-
-inline BigInt powmod(BigInt base, BigInt exp, const BigInt& /*mod*/) {
+inline BigInt powmod(BigInt base, BigInt exp, const BigInt&) {
     BigInt result(1ULL);
     while (!exp.is_zero()) {
         if (exp.d[0] & 1u) result = result * base;
