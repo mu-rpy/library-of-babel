@@ -1,0 +1,5 @@
+C:/Users/foras/Downloads/main/build/CMakeFiles/rand.dir
+C:/Users/foras/Downloads/main/build/CMakeFiles/search.dir
+C:/Users/foras/Downloads/main/build/CMakeFiles/browse.dir
+C:/Users/foras/Downloads/main/build/CMakeFiles/edit_cache.dir
+C:/Users/foras/Downloads/main/build/CMakeFiles/rebuild_cache.dir
